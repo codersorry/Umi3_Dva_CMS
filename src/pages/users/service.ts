@@ -11,3 +11,16 @@ export const getRemoteList = async () => {
       console.log(error);
     });
 };
+
+export const editRecord = async (values) => {
+  return request(`/api/users/${values.id}`, {
+    method: 'put',
+    data: values.data
+  })
+    .then((response) => {
+      return '编辑成功';
+    })
+    .catch((error) => {
+      return '编辑失败'
+    });
+};
