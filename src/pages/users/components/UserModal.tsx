@@ -1,21 +1,35 @@
-import React, { useEffect } from 'react';
-import { Modal, Form, Input } from 'antd';
+import React, { useEffect, FC } from 'react';
+import { Modal, Form, Input, message } from 'antd';
+import {DataType} from '../data'
 
-const UserModal = (props) => {
+interface UserModalProps {
+  record: DataType | undefined;
+  isVisible: boolean;
+  handleClosed: ()=>void
+  onFinish: (data: DataType)=>void
+}
+
+const UserModal: FC<UserModalProps>= (props) => {
   const { record, isVisible, handleClosed, onFinish } = props;
 
   const [form] = Form.useForm();
 
   useEffect(() => {
-    form.setFieldsValue(record);
+    //新增弹窗清空
+    if(!record){
+      form.resetFields();
+    }else{
+      form.setFieldsValue(record);
+    }
   }, [isVisible]);
 
   const onOK = () => {
     form.submit();
   };
 
-  const onFinishFailed = errorinfo => {
-    console.log('Failed', errorinfo);  
+  const onFinishFailed = (errorinfo: any) => {
+    // message.error(errorinfo.errorFields[0].errors[0])
+    console.log('Failed:', errorinfo);
   }
 
   return (
@@ -32,7 +46,7 @@ const UserModal = (props) => {
           form={form}
           labelCol={{ span: 5 }}
           wrapperCol={{ span: 17 }}
-          onFinish={ (data)=>{ onFinish(record.id, data) } }
+          onFinish={ (data)=>{ onFinish(data) } }
           onFinishFailed={onFinishFailed}
         >
           <Form.Item

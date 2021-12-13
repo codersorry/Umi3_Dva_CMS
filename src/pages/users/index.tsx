@@ -1,16 +1,23 @@
-import React, { useState } from 'react';
-import { Table, Tag, Space, Button } from 'antd';
-import { connect } from 'umi';
+import React, { useState, FC } from 'react';
+import { Table, Space, Button, Popconfirm } from 'antd';
+import { connect, Loading, UserState, Dispatch } from 'umi';
+import { DataType } from './data';
 
 import UserModel from './components/UserModal';
 
-const Index = (props) => {
-  console.log(props);
-  
-  const [isVisible, setIsVisible] = useState(false);
-  const [record, setRecord] = useState();
+interface UserPageProps {
+  users: UserState[];
+  dispatch: Dispatch;
+  loading: boolean
+}
 
-  const handleEdit = (record) => {
+const UserListPage: FC<UserPageProps> = (props) => {
+  console.log(props);
+
+  const [isVisible, setIsVisible] = useState(false);
+  const [record, setRecord] = useState<DataType | undefined>();
+
+  const handleEdit = (record: DataType) => {
     setIsVisible(true);
     setRecord(record);
   };
@@ -19,29 +26,58 @@ const Index = (props) => {
     setIsVisible(false);
   };
 
-  const onFinish = (id, data) => {
+  const onFinish = (data: DataType) => {
+    if (record) {
+      //编辑
+      props.dispatch({
+        type: 'users/edit',
+        payload: {
+          id: record.id,
+          data,
+        },
+      });
+    } else {
+      //增加
+      props.dispatch({
+        type: 'users/add',
+        payload: {
+          data,
+        },
+      });
+    }
+    setIsVisible(false);
+  };
+
+  //删除确认
+  function confirm(id: number) {
     props.dispatch({
-      type: 'users/edit',
+      type: 'users/delete',
       payload: {
         id,
-        data
-      }
-    })
-  };
+      },
+    });
+  }
+
+  //新增打开弹窗
+  function addUser() {
+    setIsVisible(true);
+    //把record置空
+    setRecord(undefined);
+  }
 
   const columns = [
     {
       title: 'ID',
       dataIndex: 'id',
       key: 'id',
-      render: (text) => <a>{text}</a>,
+      render: (text: any) => <a>{text}</a>,
       align: 'center',
     },
     {
       title: 'Name',
       dataIndex: 'name',
       key: 'name',
-      render: (text) => <a>{text}</a>,
+      render: (text: any) => <a>{text}</a>,
       align: 'center',
     },
     {
@@ -53,7 +89,7 @@ const Index = (props) => {
     {
       title: 'Action',
       key: 'action',
-      render: (text, record) => (
+      render: (text: any, record: DataType) => (
         <Space size="middle">
           <Button
             onClick={() => {
@@ -63,9 +99,18 @@ const Index = (props) => {
           >
             Edit
           </Button>
-          <Button type="primary" danger>
-            Delete
-          </Button>
+          <Popconfirm
+            title="你确认要删除吗？"
+            onConfirm={() => {
+              confirm(record.id);
+            }}
+            okText="Yes"
+            cancelText="No"
+          >
+            <Button type="primary" danger>
+              Delete
+            </Button>
+          </Popconfirm>
         </Space>
       ),
       align: 'center',
@@ -74,7 +119,15 @@ const Index = (props) => {
 
   return (
     <div className="list-table">
-      <Table columns={columns} dataSource={props.users.data} rowKey="id" />
+      <Button onClick={addUser} type="primary">
+        Add
+      </Button>
+      <Table
+        loading={props.loading.models.users}
+        columns={columns}
+        dataSource={props.users.data}
+        rowKey="id"
+      />
       <UserModel
         isVisible={isVisible}
         handleClosed={handleClosed}
@@ -85,6 +138,12 @@ const Index = (props) => {
   );
 };
 
-const mapStateToProps = ({users}) => ({users});
+const mapStateToProps = ({
+  users,
+  loading,
+}: {
+  users: UserState[];
+  loading: Loading;
+}) => ({ users, loading });
 
-export default connect(mapStateToProps)(Index);
+export default connect(mapStateToProps)(UserListPage);
